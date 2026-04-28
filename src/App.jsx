@@ -29,8 +29,6 @@ function App() {
 
       <div className="content-wrapper">
         <header className="app-header">
-          <div style={{ position: 'absolute', top: '1rem', right: '1.5rem', zIndex: 100 }} id="google_translate_element"></div>
-          
           <div className="header-icon-wrapper header-animate">
             <ShieldCheck size={32} />
           </div>
