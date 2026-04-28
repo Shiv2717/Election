@@ -139,7 +139,8 @@ const ConstituencySearch = () => {
                   style={{ border: 0 }}
                   loading="lazy"
                   allowFullScreen
-                  src={`https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY_HERE&q=${encodeURIComponent(result.name + ', ' + result.state + ', India')}`}
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.google.com/maps?q=${encodeURIComponent(result.name + ', ' + result.state + ', India')}&output=embed`}
                 ></iframe>
               </div>
             </div>
