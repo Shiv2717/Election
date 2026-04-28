@@ -130,19 +130,6 @@ const ConstituencySearch = () => {
                 </div>
               </div>
               
-              {/* Google Maps Integration abstract */}
-              <div className="hidden sm:flex w-24 h-24 rounded-xl border border-slate-700 overflow-hidden bg-slate-800 items-center justify-center opacity-80" aria-label={`Map of ${result.name}`}>
-                <iframe
-                  title={`Google Map of ${result.name}`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(result.name + ', ' + result.state + ', India')}&output=embed`}
-                ></iframe>
-              </div>
             </div>
             
             <div className="mt-5 pt-4 border-t border-slate-700 flex justify-between items-center">
