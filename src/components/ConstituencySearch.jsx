@@ -78,19 +78,21 @@ const ConstituencySearch = () => {
         </div>
       </div>
 
-      <form onSubmit={handleSearch} className="relative mb-6">
+      <form onSubmit={handleSearch} className="relative mb-6" aria-label="Search Constituency">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Enter PIN code (e.g., 110001) or name..."
-          className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-accent-saffron focus:ring-1 focus:ring-accent-saffron transition-all"
+          className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-accent-saffron focus:ring-2 focus:ring-accent-saffron transition-all"
+          aria-label="Enter PIN code or constituency name"
         />
-        <Search className="absolute left-4 top-3.5 text-slate-400" size={20} />
+        <Search className="absolute left-4 top-3.5 text-slate-400" size={20} aria-hidden="true" />
         <button 
           type="submit"
           disabled={isSearching}
-          className="absolute right-2 top-2 bottom-2 bg-accent-saffron hover:bg-orange-500 text-white font-medium px-4 rounded-lg transition-colors flex items-center justify-center min-w-[80px]"
+          className="absolute right-2 top-2 bottom-2 bg-accent-saffron hover:bg-orange-500 text-white font-medium px-4 rounded-lg transition-colors flex items-center justify-center min-w-[80px] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-accent-saffron disabled:opacity-50"
+          aria-label="Search"
         >
           {isSearching ? (
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -128,9 +130,17 @@ const ConstituencySearch = () => {
                 </div>
               </div>
               
-              {/* Decorative Map abstract */}
-              <div className="hidden sm:flex w-24 h-24 rounded-full border border-slate-700/50 bg-slate-800 items-center justify-center opacity-50">
-                <Map size={40} className="text-slate-500" />
+              {/* Google Maps Integration abstract */}
+              <div className="hidden sm:flex w-24 h-24 rounded-xl border border-slate-700 overflow-hidden bg-slate-800 items-center justify-center opacity-80" aria-label={`Map of ${result.name}`}>
+                <iframe
+                  title={`Google Map of ${result.name}`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  src={`https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY_HERE&q=${encodeURIComponent(result.name + ', ' + result.state + ', India')}`}
+                ></iframe>
               </div>
             </div>
             
