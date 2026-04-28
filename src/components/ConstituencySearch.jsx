@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { Search, MapPin, Map, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const realConstituencies = {
-  '110001': { name: 'New Delhi', state: 'Delhi', currentMP: 'Bansuri Swaraj', phase: 6, date: 'May 25' },
-  '400001': { name: 'Mumbai South', state: 'Maharashtra', currentMP: 'Arvind Sawant', phase: 5, date: 'May 20' },
-  '382010': { name: 'Gandhinagar', state: 'Gujarat', currentMP: 'Amit Shah', phase: 3, date: 'May 7' },
-  '713206': { name: 'Bardhaman-Durgapur', state: 'West Bengal', currentMP: 'Kirti Azad', phase: 4, date: 'May 13' },
-  '221001': { name: 'Varanasi', state: 'Uttar Pradesh', currentMP: 'Narendra Modi', phase: 7, date: 'June 1' }
-};
+import { getPoliticalInfoForPin } from '../data/politicalLookup';
 
 const ConstituencySearch = () => {
   const [query, setQuery] = useState('');
@@ -17,45 +10,59 @@ const ConstituencySearch = () => {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    const cleanQuery = query.trim();
+    const cleanQuery = query.replace(/\s+/g, '').trim();
     if (!cleanQuery) return;
+
+    if (!/^\d{6}$/.test(cleanQuery)) {
+      setResult({ error: 'Please enter a valid 6-digit Indian PIN code.' });
+      return;
+    }
     
     setIsSearching(true);
     setResult(null);
     
     try {
-      if (/^\d{6}$/.test(cleanQuery)) {
-        // Real API call for PIN code
-        const response = await fetch(`https://api.postalpincode.in/pincode/${cleanQuery}`);
-        const data = await response.json();
-        
-        if (data && data[0] && data[0].Status === 'Success') {
-          const postOffice = data[0].PostOffice[0];
-          const district = postOffice.District;
-          const state = postOffice.State;
-          
-          const localData = realConstituencies[cleanQuery] || null;
-          
-          setResult({
-            name: localData ? localData.name : `${district} Region`,
-            state: state,
-            currentMP: localData ? localData.currentMP : "Data unavailable locally",
-            date: localData ? localData.date : "Check ECI Portal",
-            phase: localData ? localData.phase : "-",
-            isFallback: !localData
-          });
-        } else {
-          // Fallback to check if we just have the name
-          const found = Object.values(realConstituencies).find(c => c.name.toLowerCase() === cleanQuery.toLowerCase());
-          setResult(found || { error: "PIN code not found." });
-        }
+      const response = await fetch(`https://api.postalpincode.in/pincode/${cleanQuery}`);
+      const data = await response.json();
+      const postOffices = data?.[0]?.PostOffice?.map((office) => ({
+        name: office.Name || 'Unknown office',
+        branchType: office.BranchType || 'N/A',
+        deliveryStatus: office.DeliveryStatus || 'N/A',
+        district: office.District || 'N/A',
+        division: office.Division || 'N/A',
+        region: office.Region || 'N/A',
+        state: office.State || 'N/A',
+        circle: office.Circle || 'N/A',
+        country: office.Country || 'India',
+        pincode: office.Pincode || cleanQuery
+      })) || [];
+
+      if (data?.[0]?.Status === 'Success' && postOffices.length > 0) {
+        const firstOffice = postOffices[0];
+        const deliveryCount = postOffices.filter((office) => office.deliveryStatus.toLowerCase() === 'delivery').length;
+        const politicalInfo = await getPoliticalInfoForPin(cleanQuery);
+
+        setResult({
+          pincode: cleanQuery,
+          district: firstOffice.district,
+          state: firstOffice.state,
+          region: firstOffice.region,
+          circle: firstOffice.circle,
+          country: firstOffice.country,
+          constituency: politicalInfo?.constituency || 'Not mapped',
+          currentMp: politicalInfo?.mpName || 'Unavailable',
+          currentParty: politicalInfo?.party || 'Unavailable',
+          isVacant: politicalInfo?.isVacant || false,
+          hasPoliticalData: Boolean(politicalInfo),
+          totalOffices: postOffices.length,
+          deliveryCount,
+          offices: postOffices
+        });
       } else {
-         // Search by name
-         const found = Object.values(realConstituencies).find(c => c.name.toLowerCase().includes(cleanQuery.toLowerCase()));
-         setResult(found || { error: "Constituency not found in local database." });
+        setResult({ error: 'No post office data found for this PIN code.' });
       }
     } catch (err) {
-       setResult({ error: "Error fetching data. Please try again." });
+      setResult({ error: 'Error fetching India Post data. Please try again.' });
     }
     
     setIsSearching(false);
@@ -69,23 +76,24 @@ const ConstituencySearch = () => {
         </div>
         <div className="flex-1">
           <h3 className="text-xl font-heading font-bold text-white flex items-center gap-2">
-            Constituency Lookup
-            <span className="text-[10px] uppercase tracking-wider bg-emerald-900/50 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded flex items-center gap-1 hidden sm:flex">
-              <Database size={10} /> Official ECI Data
+            All India PIN Lookup
+            <span className="text-[10px] uppercase tracking-wider bg-emerald-900/50 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded inline-flex items-center gap-1">
+              <Database size={10} /> India Post Data
             </span>
           </h3>
-          <p className="text-sm text-slate-400">Find polling dates and details by PIN code or Constituency name.</p>
+          <p className="text-sm text-slate-400">Search any valid Indian PIN code to see every post office mapped to that location.</p>
+          <p className="text-xs text-slate-500 mt-1">The same search also returns the current Lok Sabha constituency and MP when the pin is mapped.</p>
         </div>
       </div>
 
-      <form onSubmit={handleSearch} className="relative mb-6" aria-label="Search Constituency">
+      <form onSubmit={handleSearch} className="relative mb-6" aria-label="Search PIN Code">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Enter PIN code (e.g., 110001) or name..."
+          placeholder="Enter a 6-digit PIN code (e.g., 110001)"
           className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-accent-saffron focus:ring-2 focus:ring-accent-saffron transition-all"
-          aria-label="Enter PIN code or constituency name"
+          aria-label="Enter Indian PIN code"
         />
         <Search className="absolute left-4 top-3.5 text-slate-400" size={20} aria-hidden="true" />
         <button 
@@ -116,30 +124,99 @@ const ConstituencySearch = () => {
                   <MapPin size={16} />
                   <span className="text-sm font-semibold uppercase tracking-wider">{result.state}</span>
                 </div>
-                <h4 className="text-2xl font-bold text-white mb-4">{result.name}</h4>
+                <h4 className="text-2xl font-bold text-white mb-4">PIN Code {result.pincode}</h4>
+
+                <div className="mb-5 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Current MP</span>
+                    <span className={`text-[11px] uppercase tracking-wider px-2 py-1 rounded-full border ${result.isVacant ? 'border-amber-500/40 bg-amber-500/10 text-amber-400' : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'}`}>
+                      {result.isVacant ? 'Vacant seat' : 'Sitting member'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div className="rounded-lg bg-slate-900/70 border border-slate-700 p-3">
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Lok Sabha constituency</p>
+                      <p className="text-sm font-semibold text-white">{result.constituency}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-900/70 border border-slate-700 p-3">
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Current MP</p>
+                      <p className="text-sm font-semibold text-white">{result.currentMp}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-900/70 border border-slate-700 p-3">
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Party</p>
+                      <p className="text-sm font-semibold text-white">{result.currentParty}</p>
+                    </div>
+                  </div>
+
+                  {!result.hasPoliticalData && (
+                    <p className="mt-3 text-xs text-amber-400">Political mapping was not found for this PIN, but the postal data is still shown below.</p>
+                  )}
+                </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Polling Date</p>
-                    <p className="font-semibold text-white">{result.date} <span className="text-xs font-normal text-slate-400 ml-1">{result.phase !== "-" ? `(Phase ${result.phase})` : ''}</span></p>
+                    <p className="text-xs text-slate-400 mb-1">District</p>
+                    <p className="font-semibold text-white">{result.district}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Current MP</p>
-                    <p className="font-semibold text-white">{result.currentMP}</p>
+                    <p className="text-xs text-slate-400 mb-1">State</p>
+                    <p className="font-semibold text-white">{result.state}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 mb-1">Post Offices</p>
+                    <p className="font-semibold text-white">{result.totalOffices}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 mb-1">Delivery Offices</p>
+                    <p className="font-semibold text-white">{result.deliveryCount}</p>
                   </div>
                 </div>
+
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-400">
+                  <span className="rounded-full bg-slate-800 px-3 py-1">Region: {result.region}</span>
+                  <span className="rounded-full bg-slate-800 px-3 py-1">Circle: {result.circle}</span>
+                  <span className="rounded-full bg-slate-800 px-3 py-1">Country: {result.country}</span>
+                </div>
               </div>
-              
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-slate-700">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="text-xs text-slate-400">All post offices returned for this PIN code</span>
+                <span className="text-xs text-emerald-500 font-medium">Nationwide coverage</span>
+              </div>
+
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {result.offices.map((office, index) => (
+                  <div key={`${office.name}-${index}`} className="rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h5 className="text-white font-semibold">{office.name}</h5>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {office.branchType} · {office.deliveryStatus}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-accent-saffron bg-accent-saffron/10 border border-accent-saffron/30 rounded-full px-2 py-1 whitespace-nowrap">
+                        {office.pincode}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-400 sm:grid-cols-2">
+                      <span>Division: {office.division}</span>
+                      <span>Region: {office.region}</span>
+                      <span>District: {office.district}</span>
+                      <span>Circle: {office.circle}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
             
-            <div className="mt-5 pt-4 border-t border-slate-700 flex justify-between items-center">
-              {result.isFallback ? (
-                <span className="text-xs text-slate-400">Showing regional data. Exact MP mapping not in local database.</span>
-              ) : (
-                <span className="text-xs text-emerald-500">Verified Match</span>
-              )}
-              <a href="https://results.eci.gov.in/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-accent-blue-light hover:text-blue-400 transition-colors">
-                View on ECI Portal →
+            <div className="mt-5 pt-4 border-t border-slate-700 flex justify-between items-center gap-3 flex-wrap">
+              <span className="text-xs text-slate-400">Showing India Post location data for this PIN code.</span>
+              <a href="https://www.indiapost.gov.in/VAS/Pages/LocatePostOffices.aspx" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-accent-blue-light hover:text-blue-400 transition-colors">
+                View on India Post →
               </a>
             </div>
           </motion.div>
