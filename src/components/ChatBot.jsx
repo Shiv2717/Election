@@ -8,6 +8,7 @@ const ChatBot = () => {
     { text: "Hello! I am your Election Assistant. Ask me anything about the Indian election process.", isBot: true }
   ]);
   const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -18,32 +19,65 @@ const ChatBot = () => {
     scrollToBottom();
   }, [messages, isOpen]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    // Add user message
-    const newMessages = [...messages, { text: input, isBot: false }];
-    setMessages(newMessages);
+    const userMessage = input.trim();
+    setMessages(prev => [...prev, { text: userMessage, isBot: false }]);
     setInput("");
+    setIsTyping(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      let botResponse = "I'm still learning, but you can find a lot of information in the steps above!";
-      const lowerInput = input.toLowerCase();
+    const lowerInput = userMessage.toLowerCase();
+    let botResponse = "";
 
-      if (lowerInput.includes("register") || lowerInput.includes("form 6")) {
-        botResponse = "To register, you need to fill Form 6. You can do this online on the NVSP portal or via the Voter Helpline app.";
-      } else if (lowerInput.includes("date") || lowerInput.includes("when")) {
-        botResponse = "Election dates are announced by the Election Commission of India. Check the 'Election Announcement' step for details.";
-      } else if (lowerInput.includes("evm") || lowerInput.includes("machine")) {
-        botResponse = "EVM stands for Electronic Voting Machine. You press the blue button next to your candidate's name to cast your vote.";
-      } else if (lowerInput.includes("results") || lowerInput.includes("win")) {
-        botResponse = "Results are declared after counting. The candidate with the most valid votes wins the constituency.";
+    // 1. Check Local Knowledge Base First
+    if (lowerInput.includes("hello") || lowerInput.includes("hi ") || lowerInput === "hi") {
+      botResponse = "Hello! How can I help you today?";
+    } else if (lowerInput.includes("register") || lowerInput.includes("form 6") || lowerInput.includes("apply")) {
+      botResponse = "To register to vote, you need to fill out Form 6. You can do this online on the official NVSP portal, via the Voter Helpline App, or offline at your local Electoral Registration Office.";
+    } else if (lowerInput.includes("date") || lowerInput.includes("when")) {
+      botResponse = "The 2024 General Elections were held in 7 phases from April 19 to June 1, 2024. The results were declared on June 4, 2024.";
+    } else if (lowerInput.includes("evm") || lowerInput.includes("machine") || lowerInput.includes("vote")) {
+      botResponse = "EVM stands for Electronic Voting Machine. To cast your vote, press the blue button next to your chosen candidate's name and symbol. A red light will glow, and you'll hear a long beep confirming your vote. Check the VVPAT slip to verify.";
+    } else if (lowerInput.includes("results") || lowerInput.includes("won") || lowerInput.includes("winner")) {
+      botResponse = "In the 2024 Lok Sabha Elections, the NDA alliance secured 293 seats, forming the government, while the I.N.D.I.A bloc won 234 seats.";
+    } else if (lowerInput.includes("who is") && lowerInput.includes("modi")) {
+      botResponse = "Narendra Modi is the current Prime Minister of India, representing the Bharatiya Janata Party (BJP). He secured his third consecutive victory in the 2024 elections from the Varanasi constituency.";
+    } else {
+      // 2. Fetch from Wikipedia API for general knowledge
+      try {
+        // Step A: Search for the best matching Wikipedia article title
+        const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(userMessage)}&limit=1&namespace=0&format=json&origin=*`);
+        const searchData = await searchRes.json();
+        
+        if (searchData[1] && searchData[1].length > 0) {
+          const title = searchData[1][0];
+          
+          // Step B: Fetch the summary of that article
+          const summaryRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+          if (summaryRes.ok) {
+            const summaryData = await summaryRes.json();
+            if (summaryData.extract) {
+              botResponse = summaryData.extract;
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Wikipedia API fetch failed:", error);
       }
 
+      // 3. Fallback if API fails or no result found
+      if (!botResponse) {
+        botResponse = "I'm sorry, I couldn't find an answer to that specific question. Try asking me about the Indian election process, voter registration, or EVMs!";
+      }
+    }
+
+    // Add slight delay to simulate human typing speed
+    setTimeout(() => {
       setMessages(prev => [...prev, { text: botResponse, isBot: true }]);
-    }, 1000);
+      setIsTyping(false);
+    }, 600);
   };
 
   return (
@@ -137,13 +171,32 @@ const ChatBot = () => {
                     borderRadius: '1rem',
                     borderBottomLeftRadius: msg.isBot ? '0' : '1rem',
                     borderBottomRightRadius: msg.isBot ? '1rem' : '0',
-                    maxWidth: '80%',
-                    fontSize: '0.95rem'
+                    maxWidth: '85%',
+                    fontSize: '0.95rem',
+                    lineHeight: '1.4'
                   }}
                 >
                   {msg.text}
                 </div>
               ))}
+              
+              {isTyping && (
+                <div style={{
+                  alignSelf: 'flex-start',
+                  backgroundColor: 'rgba(51, 65, 85, 0.8)',
+                  padding: '1rem',
+                  borderRadius: '1rem',
+                  borderBottomLeftRadius: '0',
+                  display: 'flex',
+                  gap: '6px',
+                  alignItems: 'center'
+                }}>
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              )}
+              
               <div ref={messagesEndRef} />
             </div>
 

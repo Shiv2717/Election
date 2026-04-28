@@ -3,22 +3,24 @@ import { motion } from 'framer-motion';
 import EligibilityChecker from './EligibilityChecker';
 import RegistrationHelp from './RegistrationHelp';
 import StatusChecker from './StatusChecker';
+import ConstituencySearch from './ConstituencySearch';
+import SeatVisualization from './SeatVisualization';
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1, 
-    transition: { 
+  visible: {
+    opacity: 1,
+    transition: {
       staggerChildren: 0.15,
       delayChildren: 0.1
-    } 
+    }
   }
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     transition: { duration: 0.5, ease: "easeOut" }
   }
@@ -26,7 +28,7 @@ const itemVariants = {
 
 const VoterToolsView = () => {
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -40,13 +42,21 @@ const VoterToolsView = () => {
       </div>
 
       <motion.div variants={itemVariants}>
+        <ConstituencySearch />
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <SeatVisualization />
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
         <EligibilityChecker />
       </motion.div>
-      
+
       <motion.div variants={itemVariants}>
         <RegistrationHelp />
       </motion.div>
-      
+
       <motion.div variants={itemVariants}>
         <StatusChecker />
       </motion.div>
