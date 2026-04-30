@@ -2,14 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Layers, Wrench, Activity, Map, Bot, FileSignature } from 'lucide-react';
 import gsap from 'gsap';
 import StepDetail from './components/StepDetail';
+import LanguageSwitcher from './components/LanguageSwitcher';
 import VoterToolsView from './components/VoterToolsView';
 import ChatBot from './components/ChatBot';
 import LiveTicker from './components/LiveTicker';
 import { electionSteps } from './data/electionSteps';
+import { translateRoot } from './utils/pageTranslation';
 import './index.css';
 
 function App() {
   const [currentView, setCurrentView] = useState('timeline');
+  const [currentLanguage, setCurrentLanguage] = useState(() => {
+    try {
+      return window.localStorage.getItem('preferred-website-language') || 'en';
+    } catch {
+      return 'en';
+    }
+  });
 
   useEffect(() => {
     // Initial GSAP animation for header
@@ -19,28 +28,53 @@ function App() {
     );
   }, []);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('preferred-website-language', currentLanguage);
+    } catch {
+      // Ignore storage failures.
+    }
+
+    document.documentElement.lang = currentLanguage;
+    document.documentElement.dir = currentLanguage === 'ur' ? 'rtl' : 'ltr';
+  }, [currentLanguage]);
+
+  useEffect(() => {
+    const root = document.getElementById('root');
+
+    if (!root) {
+      return undefined;
+    }
+
+    translateRoot(root, currentLanguage).catch(() => {});
+  }, [currentLanguage, currentView]);
+
   return (
     <div className="app-container font-sans bg-slate-900 text-slate-100">
       <LiveTicker />
       
-      {/* Background decoration */}
       <div className="bg-decoration-saffron" />
       <div className="bg-decoration-green" />
 
       <div className="content-wrapper">
         <header className="app-header">
-          <div className="header-icon-wrapper header-animate">
-            <ShieldCheck size={32} />
+          <div className="header-toolbar header-animate">
+            <LanguageSwitcher selectedLanguage={currentLanguage} onLanguageChange={setCurrentLanguage} />
           </div>
+
+          <div className="hero-tagline header-animate">
+            Simplifying Indian Elections
+          </div>
+
           <h1 className="app-title header-animate font-heading tracking-tight">
             The <span className="gradient-text">Indian Election</span> Process
           </h1>
-          <p className="app-subtitle header-animate mb-12">
-            Your interactive guide to understanding how the world's largest democracy votes.
+          <p className="app-subtitle header-animate">
+            A clearer way to explore voter registration, election timelines, and civic tools across India.
           </p>
 
           {/* Features Showcase */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12 header-animate">
+          <div className="hero-feature-grid header-animate">
             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 text-left hover:bg-slate-800 transition-colors">
               <Activity className="text-red-500 mb-3" size={24} />
               <h3 className="text-sm font-bold text-white mb-1">Live Updates</h3>
@@ -62,27 +96,27 @@ function App() {
               <p className="text-xs text-slate-400">24/7 automated help for election queries.</p>
             </div>
           </div>
-
-          {/* View Switcher Tabs */}
-          <div className="tab-switcher-container header-animate">
-            <div className="tab-switcher-wrapper">
-              <button
-                onClick={() => setCurrentView('timeline')}
-                className={`tab-btn ${currentView === 'timeline' ? 'active-timeline' : ''}`}
-              >
-                <Layers size={18} />
-                Election Timeline
-              </button>
-              <button
-                onClick={() => setCurrentView('tools')}
-                className={`tab-btn ${currentView === 'tools' ? 'active-tools' : ''}`}
-              >
-                <Wrench size={18} />
-                Interactive Tools
-              </button>
-            </div>
-          </div>
         </header>
+
+        {/* View Switcher Tabs */}
+        <div className="tab-switcher-container header-animate">
+          <div className="tab-switcher-wrapper">
+            <button
+              onClick={() => setCurrentView('timeline')}
+              className={`tab-btn ${currentView === 'timeline' ? 'active-timeline' : ''}`}
+            >
+              <Layers size={18} />
+              Election Timeline
+            </button>
+            <button
+              onClick={() => setCurrentView('tools')}
+              className={`tab-btn ${currentView === 'tools' ? 'active-tools' : ''}`}
+            >
+              <Wrench size={18} />
+              Interactive Tools
+            </button>
+          </div>
+        </div>
 
         <div className="single-column-layout">
           {currentView === 'timeline' ? (

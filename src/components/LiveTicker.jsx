@@ -42,6 +42,7 @@ const LiveTicker = React.memo(() => {
   return (
     <div 
       className="bg-red-600 text-white py-2 px-4 flex items-center justify-center font-sans shadow-md border-b border-red-700 relative z-50"
+      data-no-translate="true"
       role="region"
       aria-live="polite"
       aria-label="Live Election News Updates"

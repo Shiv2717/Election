@@ -66,7 +66,7 @@ const StepDetail = ({ step, index }) => {
       whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}
       className="glass-panel step-detail-panel"
-      style={{ marginBottom: '5rem', position: 'relative', overflow: 'hidden' }}
+      style={{ position: 'relative', overflow: 'hidden' }}
     >
       {/* Decorative gradient blur behind the card */}
       <div style={{
@@ -128,7 +128,7 @@ const StepDetail = ({ step, index }) => {
               Video Guide
             </h4>
             <div className="video-container" style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '0.75rem', border: '1px solid var(--border-color)', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)' }}>
-              <iframe width="725" height="425" src="https://www.youtube-nocookie.com/embed/ZJReQ8ao0SU?si=cw3IUmL5vDBM4tF8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+              <iframe width="725" height="425" src="https://www.youtube-nocookie.com/embed/ZJReQ8ao0SU?si=cw3IUmL5vDBM4tF8" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
             </div>
           </motion.div>
         )}

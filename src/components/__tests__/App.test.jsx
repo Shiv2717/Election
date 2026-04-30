@@ -14,7 +14,7 @@ beforeAll(() => {
 describe('App Component', () => {
   it('renders the main application title', () => {
     render(<App />);
-    const titleElement = screen.getByText(/Indian Election/i);
+    const titleElement = screen.getByRole('heading', { name: /The Indian Election Process/i });
     expect(titleElement).toBeDefined();
   });
 });

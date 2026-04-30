@@ -32,7 +32,7 @@ const VoterToolsView = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 0' }}
+      className="tools-view-shell"
     >
       <div className="tools-view-header">
         <h2>Interactive Voter Tools</h2>
